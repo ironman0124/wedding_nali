@@ -45,7 +45,7 @@ if (sessionStorage.getItem('wpa_auth') === '1') {
 
 // ── STATE ─────────────────────────────────────────────────────
 let state = {
-  haldi:    [], mendhi: [], saatak: [], wedding: [],
+  haldi:    [], mendhi: [], wedding: [],
   events:   [], tasks:  [], expenses: [],
   loading:  false
 };
@@ -85,7 +85,6 @@ async function initApp() {
   if (data) {
 	state.haldi    = data.haldi    || [];
 	state.mendhi   = data.mendhi    || [];
-    state.saatak   = data.saatak   || [];
     state.wedding  = data.wedding  || [];
     state.events   = data.events   || [];
     state.tasks    = data.tasks    || [];
@@ -95,7 +94,6 @@ async function initApp() {
     // fallback to localStorage
 	state.haldi    = JSON.parse(localStorage.getItem('wpa_haldi')    || '[]');
 	state.mendhi   = JSON.parse(localStorage.getItem('wpa_mendhi')   || '[]');
-    state.saatak   = JSON.parse(localStorage.getItem('wpa_saatak')   || '[]');
     state.wedding  = JSON.parse(localStorage.getItem('wpa_wedding')  || '[]');
     state.events   = JSON.parse(localStorage.getItem('wpa_events')   || '[]');
     state.tasks    = JSON.parse(localStorage.getItem('wpa_tasks')    || '[]');
@@ -112,7 +110,6 @@ async function initApp() {
 function saveLocal() {
   localStorage.setItem('wpa_haldi',    JSON.stringify(state.haldi));
   localStorage.setItem('wpa_mendhi',    JSON.stringify(state.mendhi));
-  localStorage.setItem('wpa_saatak',   JSON.stringify(state.saatak));
   localStorage.setItem('wpa_wedding',  JSON.stringify(state.wedding));
   localStorage.setItem('wpa_events',   JSON.stringify(state.events));
   localStorage.setItem('wpa_tasks',    JSON.stringify(state.tasks));
@@ -172,7 +169,6 @@ function renderDashboard() {
   const tabs = [
     { key:'haldi',   label:'🌿 Haldi Day', 			color:'teal',   evIdx:1 },
 	{ key:'mendhi',   label:'💃 Mendhi Day', 		color:'blue',   evIdx:2 },
-    { key:'saatak',  label:'🪔 Saatak Day',         color:'purple', evIdx:3 },
     { key:'wedding', label:'💍 Wedding Day',        color:'red',    evIdx:5 },
   ];
 
@@ -343,7 +339,6 @@ async function saveGuest() {
       if (fresh) {
         state.haldi   = fresh.haldi   || state.haldi;
 		state.mendhi  = fresh.mendhi  || state.mendhi;
-        state.saatak  = fresh.saatak  || state.saatak;
         state.wedding = fresh.wedding || state.wedding;
       }
       showBanner('✅ Guest added to Google Sheets!', 'success', 3000);
@@ -599,7 +594,6 @@ async function manualSync() {
   if (data) {
     state.haldi    = data.haldi    || state.haldi;
 	state.mendhi   = data.mendhi   || state.mendhi;
-    state.saatak   = data.saatak   || state.saatak;
     state.wedding  = data.wedding  || state.wedding;
     state.events   = data.events   || state.events;
     state.tasks    = data.tasks    || state.tasks;
