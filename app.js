@@ -45,7 +45,7 @@ if (sessionStorage.getItem('wpa_auth') === '1') {
 
 // ── STATE ─────────────────────────────────────────────────────
 let state = {
-  pithi:    [], saatak: [], wedding: [],
+  haldi:    [], mendhi: [], saatak: [], wedding: [],
   events:   [], tasks:  [], expenses: [],
   loading:  false
 };
@@ -83,7 +83,8 @@ async function initApp() {
   showLoadingOverlay(true);
   const data = await apiGet('all');
   if (data) {
-    state.pithi    = data.pithi    || [];
+	state.haldi    = data.haldi    || [];
+	state.mendhi   = data.mendhi    || [];
     state.saatak   = data.saatak   || [];
     state.wedding  = data.wedding  || [];
     state.events   = data.events   || [];
@@ -92,7 +93,8 @@ async function initApp() {
     showBanner('✅ Synced with Google Sheets', 'success', 3000);
   } else {
     // fallback to localStorage
-    state.pithi    = JSON.parse(localStorage.getItem('wpa_pithi')    || '[]');
+	state.haldi    = JSON.parse(localStorage.getItem('wpa_haldi')    || '[]');
+	state.mendhi   = JSON.parse(localStorage.getItem('wpa_mendhi')   || '[]');
     state.saatak   = JSON.parse(localStorage.getItem('wpa_saatak')   || '[]');
     state.wedding  = JSON.parse(localStorage.getItem('wpa_wedding')  || '[]');
     state.events   = JSON.parse(localStorage.getItem('wpa_events')   || '[]');
@@ -101,14 +103,15 @@ async function initApp() {
   }
   showLoadingOverlay(false);
   renderDashboard();
-  renderGuestList('pithi');
+  renderGuestList('haldi');
   renderEvents();
   renderTasks();
   renderExpenses();
 }
 
 function saveLocal() {
-  localStorage.setItem('wpa_pithi',    JSON.stringify(state.pithi));
+  localStorage.setItem('wpa_haldi',    JSON.stringify(state.haldi));
+  localStorage.setItem('wpa_mendhi',    JSON.stringify(state.mendhi));
   localStorage.setItem('wpa_saatak',   JSON.stringify(state.saatak));
   localStorage.setItem('wpa_wedding',  JSON.stringify(state.wedding));
   localStorage.setItem('wpa_events',   JSON.stringify(state.events));
@@ -167,7 +170,8 @@ function toggleSidebar() {
 // ── DASHBOARD ─────────────────────────────────────────────────
 function renderDashboard() {
   const tabs = [
-    { key:'pithi',   label:'🌿 Pithi (Haldi) Day', color:'teal',   evIdx:1 },
+    { key:'haldi',   label:'🌿 Haldi Day', 			color:'teal',   evIdx:1 },
+	{ key:'mendhi',   label:'💃 Mendhi Guest List', color:'blue',   evIdx:2 },
     { key:'saatak',  label:'🪔 Saatak Day',         color:'purple', evIdx:3 },
     { key:'wedding', label:'💍 Wedding Day',        color:'red',    evIdx:5 },
   ];
@@ -233,7 +237,7 @@ function renderDashboard() {
 }
 
 // ── GUEST LIST ────────────────────────────────────────────────
-let currentGuestTab = 'pithi';
+let currentGuestTab = 'haldi';
 
 function switchGuestTab(tab) {
   currentGuestTab = tab;
@@ -337,7 +341,8 @@ async function saveGuest() {
       // Reload from sheet
       const fresh = await apiGet('guests');
       if (fresh) {
-        state.pithi   = fresh.pithi   || state.pithi;
+        state.haldi   = fresh.haldi   || state.haldi;
+		state.mendhi  = fresh.mendhi  || state.mendhi;
         state.saatak  = fresh.saatak  || state.saatak;
         state.wedding = fresh.wedding || state.wedding;
       }
@@ -592,7 +597,8 @@ async function manualSync() {
   showLoadingOverlay(true);
   const data = await apiGet('all');
   if (data) {
-    state.pithi    = data.pithi    || state.pithi;
+    state.haldi    = data.haldi    || state.haldi;
+	state.mendhi   = data.mendhi   || state.mendhi;
     state.saatak   = data.saatak   || state.saatak;
     state.wedding  = data.wedding  || state.wedding;
     state.events   = data.events   || state.events;
