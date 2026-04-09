@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dharmesh & Nalishka — Wedding Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- LOADING OVERLAY -->
+<div id="loading-overlay" class="loading-overlay" style="display:none;">
+  <div class="loading-inner">
+    <div class="reactor-ring"><div class="reactor-core"></div></div>
+    <div style="margin-top:1rem;font-family:var(--font-ui);font-size:13px;color:var(--gold);letter-spacing:0.2em;">SYNCING WITH GOOGLE SHEETS…</div>
+  </div>
+</div>
+
+<!-- SYNC BANNER -->
+<div id="sync-banner" class="sync-banner" style="display:none;"></div>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen" class="login-screen">
+  <div class="login-bg"><div class="hex-grid"></div><div class="arc-reactor"></div></div>
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="reactor-ring"><div class="reactor-core"></div></div>
+    </div>
+    <div class="login-title">
+      <span class="login-sub">WEDDING PLANNER</span>
+      <h1 class="login-names">Dharmesh <span class="amp">&</span> Nalishka</h1>
+    </div>
+    <div class="login-form">
+      <div class="field-group"><label>USERNAME</label><input type="text" id="login-user" placeholder="Enter username" autocomplete="off"></div>
+      <div class="field-group"><label>PASSWORD</label><input type="password" id="login-pass" placeholder="Enter password"></div>
+      <div id="login-error" class="login-error"></div>
+      <button class="login-btn" onclick="doLogin()"><span>INITIALISE SYSTEM</span><div class="btn-glow"></div></button>
+      <div class="login-hint">🔒 Private access only</div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" class="app hidden">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-reactor"><div class="reactor-ring small"><div class="reactor-core small"></div></div></div>
+      <div class="sidebar-title"><div class="sidebar-names">D &amp; N</div><div class="sidebar-sub">Wedding Planner</div></div>
+      <button class="sidebar-close" onclick="toggleSidebar()">✕</button>
+    </div>
+    <nav class="nav-links">
+      <a class="nav-link active" onclick="showSection('dashboard')" data-section="dashboard"><span class="nav-icon">◈</span><span>Dashboard</span></a>
+      <a class="nav-link" onclick="showSection('guests')" data-section="guests"><span class="nav-icon">◈</span><span>Guest Lists</span></a>
+      <a class="nav-link" onclick="showSection('events')" data-section="events"><span class="nav-icon">◈</span><span>Events & Dates</span></a>
+      <a class="nav-link" onclick="showSection('tasks')" data-section="tasks"><span class="nav-icon">◈</span><span>To-Do List</span></a>
+      <a class="nav-link" onclick="showSection('expenses')" data-section="expenses"><span class="nav-icon">◈</span><span>Expenses</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="sync-btn" onclick="manualSync()">🔄 SYNC WITH SHEETS</button>
+      <button class="logout-btn" style="margin-top:8px;" onclick="doLogout()">⏻ LOGOUT</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-user"><div class="user-dot"></div><span>ironman0124</span></div>
+    </header>
+
+    <!-- DASHBOARD -->
+    <section id="sec-dashboard" class="section active">
+      <div id="dashboard-content"></div>
+    </section>
+
+    <!-- GUESTS -->
+    <section id="sec-guests" class="section">
+      <div class="section-header">
+        <h2>Guest Lists</h2>
+        <button class="btn-primary" onclick="openAddGuest()">+ Add Guest</button>
+      </div>
+      <!-- Event tab switcher -->
+      <div class="guest-tabs">
+        <button class="guest-tab-btn active" data-gtab="pithi"   onclick="switchGuestTab('pithi')">🌿 Pithi</button>
+        <button class="guest-tab-btn"         data-gtab="saatak"  onclick="switchGuestTab('saatak')">🪔 Saatak</button>
+        <button class="guest-tab-btn"         data-gtab="wedding" onclick="switchGuestTab('wedding')">💍 Wedding</button>
+      </div>
+      <div class="filter-bar">
+        <input type="text" class="search-input" id="guest-search" placeholder="Search guests…" oninput="renderGuestList()">
+        <select class="filter-select" id="rsvp-filter" onchange="renderGuestList()">
+          <option value="">All RSVP</option>
+          <option>Yes</option><option>Pending</option><option>No</option><option>Optional</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>#</th><th>Name</th><th>Group</th><th>Table</th><th>RSVP</th><th>Invited</th><th>Notes</th><th></th></tr></thead>
+          <tbody id="guest-tbody"></tbody>
+        </table>
+      </div>
+      <div class="table-footer" id="guest-count"></div>
+    </section>
+
+    <!-- EVENTS -->
+    <section id="sec-events" class="section">
+      <div class="section-header"><h2>Events & Function Dates</h2><button class="btn-primary" onclick="openAddEvent()">+ Add Event</button></div>
+      <div id="events-list"></div>
+    </section>
+
+    <!-- TASKS -->
+    <section id="sec-tasks" class="section">
+      <div class="section-header"><h2>To-Do List</h2><button class="btn-primary" onclick="openAddTask()">+ Add Task</button></div>
+      <div class="filter-bar">
+        <select class="filter-select" onchange="renderTasks()" id="task-status-filter"><option value="">All</option><option value="Pending">Pending</option><option value="Done">Done</option></select>
+        <select class="filter-select" onchange="renderTasks()" id="task-cat-filter"><option value="">All categories</option><option>Ceremony</option><option>Logistics</option><option>Vendor</option><option>Attire</option><option>Guest</option><option>Other</option></select>
+      </div>
+      <div id="task-list"></div>
+    </section>
+
+    <!-- EXPENSES -->
+    <section id="sec-expenses" class="section">
+      <div class="section-header"><h2>Expense Tracker</h2><button class="btn-primary" onclick="openAddExpense()">+ Add Expense</button></div>
+      <div class="stats-grid" id="expense-stats"></div>
+      <div class="table-wrap" style="margin-top:1.5rem">
+        <table class="data-table">
+          <thead><tr><th>#</th><th>Item</th><th>Category</th><th>Budgeted (R)</th><th>Actual (R)</th><th>Diff (R)</th><th>Status</th><th></th></tr></thead>
+          <tbody id="expense-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-guest" onclick="if(event.target===this)closeModal('modal-guest')">
+  <div class="modal">
+    <div class="modal-header"><h3 id="g-modal-title">Guest</h3><button onclick="closeModal('modal-guest')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><div class="form-group"><label>First Name</label><input id="g-name" type="text"></div><div class="form-group"><label>Surname</label><input id="g-surname" type="text"></div></div>
+      <div class="form-row"><div class="form-group"><label>Group</label><select id="g-group"><option>Family</option><option>Friends</option><option>Work</option><option>Other</option></select></div><div class="form-group"><label>Table No.</label><input id="g-table" type="number"></div></div>
+      <div class="form-row"><div class="form-group"><label>RSVP Status</label><select id="g-rsvp"><option>Pending</option><option>Yes</option><option>No</option><option>Optional</option></select></div><div class="form-group"><label>Invite Sent?</label><select id="g-invite"><option>No</option><option>Yes</option></select></div></div>
+      <div class="form-group"><label>Dietary Notes</label><input id="g-diet" type="text"></div>
+      <div class="form-group"><label>WhatsApp / Contact</label><input id="g-contact" type="text"></div>
+      <div class="form-group"><label>Notes</label><input id="g-notes" type="text"></div>
+    </div>
+    <div class="modal-footer"><button class="btn-secondary" onclick="closeModal('modal-guest')">Cancel</button><button class="btn-primary" onclick="saveGuest()">Save</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-event" onclick="if(event.target===this)closeModal('modal-event')">
+  <div class="modal">
+    <div class="modal-header"><h3>Event / Function</h3><button onclick="closeModal('modal-event')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Event Name</label><input id="ev-name" type="text" placeholder="e.g. Pithi, Saatak, Wedding"></div>
+      <div class="form-row"><div class="form-group"><label>Date</label><input id="ev-date" type="date"></div><div class="form-group"><label>Time</label><input id="ev-time" type="text" placeholder="e.g. 6:00 PM"></div></div>
+      <div class="form-group"><label>Venue</label><input id="ev-venue" type="text"></div>
+      <div class="form-group"><label>Notes</label><textarea id="ev-notes" rows="3"></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn-secondary" onclick="closeModal('modal-event')">Cancel</button><button class="btn-primary" onclick="saveEvent()">Save</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-task" onclick="if(event.target===this)closeModal('modal-task')">
+  <div class="modal">
+    <div class="modal-header"><h3>Add Task</h3><button onclick="closeModal('modal-task')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Task Description</label><input id="t-text" type="text"></div>
+      <div class="form-row"><div class="form-group"><label>Category</label><select id="t-cat"><option>Ceremony</option><option>Logistics</option><option>Vendor</option><option>Attire</option><option>Guest</option><option>Other</option></select></div><div class="form-group"><label>Assigned To</label><input id="t-assign" type="text"></div></div>
+      <div class="form-group"><label>Due Date</label><input id="t-due" type="date"></div>
+    </div>
+    <div class="modal-footer"><button class="btn-secondary" onclick="closeModal('modal-task')">Cancel</button><button class="btn-primary" onclick="saveTask()">Save</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-expense" onclick="if(event.target===this)closeModal('modal-expense')">
+  <div class="modal">
+    <div class="modal-header"><h3>Expense</h3><button onclick="closeModal('modal-expense')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Description</label><input id="ex-name" type="text"></div>
+      <div class="form-row"><div class="form-group"><label>Category</label><select id="ex-cat"><option>Venue</option><option>Catering</option><option>Attire – Bride</option><option>Attire – Groom</option><option>Photography</option><option>Videography</option><option>Flowers / Decor</option><option>Music / DJ</option><option>Transport</option><option>Invitations</option><option>Cake</option><option>Hair & Makeup</option><option>Gifts</option><option>Honeymoon</option><option>Miscellaneous</option></select></div><div class="form-group"><label>Status</label><select id="ex-status"><option>Pending</option><option>Deposit Paid</option><option>Paid</option></select></div></div>
+      <div class="form-row"><div class="form-group"><label>Budgeted (R)</label><input id="ex-budget" type="number" placeholder="0"></div><div class="form-group"><label>Actual (R)</label><input id="ex-actual" type="number" placeholder="0"></div></div>
+      <div class="form-group"><label>Notes</label><input id="ex-notes" type="text"></div>
+    </div>
+    <div class="modal-footer"><button class="btn-secondary" onclick="closeModal('modal-expense')">Cancel</button><button class="btn-primary" onclick="saveExpense()">Save</button></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
