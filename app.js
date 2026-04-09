@@ -171,7 +171,7 @@ function toggleSidebar() {
 function renderDashboard() {
   const tabs = [
     { key:'haldi',   label:'🌿 Haldi Day', 			color:'teal',   evIdx:1 },
-	{ key:'mendhi',   label:'💃 Mendhi Guest List', color:'blue',   evIdx:2 },
+	{ key:'mendhi',   label:'💃 Mendhi Day', 		color:'blue',   evIdx:2 },
     { key:'saatak',  label:'🪔 Saatak Day',         color:'purple', evIdx:3 },
     { key:'wedding', label:'💍 Wedding Day',        color:'red',    evIdx:5 },
   ];
