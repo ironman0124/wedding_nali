@@ -109,7 +109,7 @@ async function initApp() {
 
 function saveLocal() {
   localStorage.setItem('wpa_haldi',    JSON.stringify(state.haldi));
-  localStorage.setItem('wpa_mendhi',    JSON.stringify(state.mendhi));
+  localStorage.setItem('wpa_mendhi',   JSON.stringify(state.mendhi));
   localStorage.setItem('wpa_wedding',  JSON.stringify(state.wedding));
   localStorage.setItem('wpa_events',   JSON.stringify(state.events));
   localStorage.setItem('wpa_tasks',    JSON.stringify(state.tasks));
@@ -168,8 +168,8 @@ function toggleSidebar() {
 function renderDashboard() {
   const tabs = [
     { key:'haldi',   label:'🌿 Haldi Day', 			color:'teal',   evIdx:1 },
-	{ key:'mendhi',   label:'💃 Mendhi Day', 		color:'blue',   evIdx:2 },
-    { key:'wedding', label:'💍 Wedding Day',        color:'red',    evIdx:5 },
+	{ key:'mendhi',  label:'💃 Mendhi Day', 		color:'purple',   evIdx:2 },
+    { key:'wedding', label:'💍 Wedding Day',        color:'red',    evIdx:3 },
   ];
 
   let html = '';
