@@ -234,10 +234,10 @@ function renderDashboard() {
     <div class="dash-card">
       <div class="card-title">💰 BUDGET (ZAR)</div>
       <div class="dash-event-stats">
-        <div class="dash-stat"><div class="ds-label">BUDGETED</div><div class="ds-val gold">R ${fmt(totalBudget)}</div></div>
-        <div class="dash-stat"><div class="ds-label">ACTUAL</div><div class="ds-val red">R ${fmt(totalActual)}</div></div>
+        <div class="dash-stat"><div class="ds-label">TOTAL (R)</div><div class="ds-val gold">R ${fmt(totalBudget)}</div></div>
+        <div class="dash-stat"><div class="ds-label">PAID (R)</div><div class="ds-val green">R ${fmt(totalActual)}</div></div>
         <div class="dash-stat"><div class="ds-label">PAID ✓</div><div class="ds-val green">R ${fmt(paid)}</div></div>
-        <div class="dash-stat"><div class="ds-label">OUTSTANDING</div><div class="ds-val orange">R ${fmt(totalBudget - paid)}</div></div>
+        <div class="dash-stat"><div class="ds-label">BALANCE (R)</div><div class="ds-val orange">R ${fmt(totalBudget - totalActual)}</div></div>
       </div>
     </div>
   </div>`;
@@ -505,26 +505,28 @@ async function saveTask() {
 
 // ── EXPENSES ──────────────────────────────────────────────────
 function renderExpenses() {
-  const totalB = state.expenses.reduce((a,e)=>a+Number(e.budget||0),0);
-  const totalA = state.expenses.reduce((a,e)=>a+Number(e.actual||0),0);
-  const paid   = state.expenses.filter(e=>e.status==='Paid').reduce((a,e)=>a+Number(e.actual||0),0);
+  // Nalishka sheet: D=Total(R) → budget, E=Paid(R) → actual, F=Balance(R) → diff
+  // Filter out TOTAL summary row and blank rows
+  const validExp = state.expenses.filter(e => e.name && String(e.name).toUpperCase() !== 'TOTAL' && e.cat);
+  const totalR   = validExp.reduce((a,e) => a + Number(e.budget||0), 0);
+  const paidR    = validExp.reduce((a,e) => a + Number(e.actual||0), 0);
+  const balanceR = validExp.reduce((a,e) => a + Number(e.diff||0),   0);
 
   document.getElementById('expense-stats').innerHTML = `
-    <div class="stat-card gold"><div class="stat-label">BUDGETED</div><div class="stat-value" style="font-size:1.3rem;">R ${fmt(totalB)}</div></div>
-    <div class="stat-card green"><div class="stat-label">ACTUAL</div><div class="stat-value" style="font-size:1.3rem;">R ${fmt(totalA)}</div></div>
-    <div class="stat-card green"><div class="stat-label">PAID</div><div class="stat-value" style="font-size:1.3rem;">R ${fmt(paid)}</div></div>
-    <div class="stat-card orange"><div class="stat-label">OUTSTANDING</div><div class="stat-value" style="font-size:1.3rem;">R ${fmt(totalB-paid)}</div></div>`;
+    <div class="stat-card gold"><div class="stat-label">TOTAL (R)</div><div class="stat-value" style="font-size:1.3rem;">R ${fmt(totalR)}</div></div>
+    <div class="stat-card green"><div class="stat-label">PAID (R)</div><div class="stat-value" style="font-size:1.3rem;">R ${fmt(paidR)}</div></div>
+    <div class="stat-card orange"><div class="stat-label">BALANCE (R)</div><div class="stat-value" style="font-size:1.3rem;">R ${fmt(balanceR)}</div></div>`;
 
-  document.getElementById('expense-tbody').innerHTML = state.expenses.filter(e => e.name && e.name.toString().toUpperCase() !== 'TOTAL' && e.cat !== '').map((e,i) => {
-    const diff = Number(e.budget||0) - Number(e.actual||0);
+  document.getElementById('expense-tbody').innerHTML = validExp.map((e,i) => {
+    const balColor = Number(e.diff||0) > 0 ? '#E67E22' : '#27AE60';
     const st = e.status==='Paid'?'badge-yes': e.status==='Deposit Paid'?'badge-deposit':'badge-pending';
     return `<tr>
       <td style="color:var(--text-muted);font-size:12px;">${i+1}</td>
       <td>${e.name}</td>
       <td style="font-size:12px;color:var(--text-muted);">${e.cat}</td>
       <td style="color:var(--gold);">R ${fmt(e.budget)}</td>
-      <td>R ${fmt(e.actual)}</td>
-      <td style="color:${diff>=0?'#27AE60':'#C0392B'};font-weight:600;">R ${fmt(Math.abs(diff))} ${diff<0?'▲':'▼'}</td>
+      <td style="color:#27AE60;">R ${fmt(e.actual)}</td>
+      <td style="color:${balColor};font-weight:600;">R ${fmt(e.diff)}</td>
       <td><span class="badge ${st}">${e.status}</span></td>
       <td><button class="btn-icon" onclick="editExpense(${e.row})">✎</button></td>
     </tr>`;
