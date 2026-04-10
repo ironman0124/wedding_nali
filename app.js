@@ -129,16 +129,18 @@ function formatDate(d) {
 }
 function formatTime(t) {
   if (!t) return '';
-  // If already in HH:MM or HH:MM:SS format, convert to 12-hour AM/PM
-  var match = String(t).match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  // Convert HH:MM or HH:MM:SS to 12-hour format with seconds: e.g. 11:00:00 AM
+  var s = String(t).trim();
+  var match = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
   if (match) {
-    var h = parseInt(match[1]);
-    var m = match[2];
+    var h   = parseInt(match[1], 10);
+    var m   = match[2];
+    var sec = match[3] ? ':' + match[3] : ':00';
     var ampm = h >= 12 ? 'PM' : 'AM';
     h = h % 12 || 12;
-    return h + ':' + m + ' ' + ampm;
+    return h + ':' + m + sec + ' ' + ampm;
   }
-  return t; // return as-is if not a recognisable time format
+  return s;
 }
 function guestList(tab) { return state[tab] || []; }
 
@@ -212,13 +214,16 @@ function renderDashboard() {
     </div>`;
   });
 
-  // Tasks & Budget
+  // Tasks & Expenses
   const tasksDone    = state.tasks.filter(t => t.done || t.status === 'Done').length;
   const tasksPending = state.tasks.filter(t => !t.done && t.status !== 'Done').length;
-  const totalBudget  = state.expenses.reduce((a, e) => a + Number(e.budget||0), 0);
-  const totalActual  = state.expenses.reduce((a, e) => a + Number(e.actual||0), 0);
-  const paid         = state.expenses.filter(e=>e.status==='Paid').reduce((a,e)=>a+Number(e.actual||0),0);
   const pct          = state.tasks.length ? Math.round(tasksDone / state.tasks.length * 100) : 0;
+  // Filter out TOTAL summary row — only count real expense entries
+  const validExp     = state.expenses.filter(e => e.name && String(e.name).toUpperCase() !== 'TOTAL' && e.cat);
+  // Nalishka sheet: budget=Total(R), actual=Paid(R), diff=Balance(R)
+  const totalR       = validExp.reduce((a, e) => a + Number(e.budget||0), 0);
+  const paidR        = validExp.reduce((a, e) => a + Number(e.actual||0), 0);
+  const balanceR     = validExp.reduce((a, e) => a + Number(e.diff||0),   0);
 
   html += `
   <div class="dash-row-2">
@@ -232,12 +237,11 @@ function renderDashboard() {
       </div>
     </div>
     <div class="dash-card">
-      <div class="card-title">💰 BUDGET (ZAR)</div>
+      <div class="card-title">💰 EXPENSES (ZAR)</div>
       <div class="dash-event-stats">
-        <div class="dash-stat"><div class="ds-label">TOTAL (R)</div><div class="ds-val gold">R ${fmt(totalBudget)}</div></div>
-        <div class="dash-stat"><div class="ds-label">PAID (R)</div><div class="ds-val green">R ${fmt(totalActual)}</div></div>
-        <div class="dash-stat"><div class="ds-label">PAID ✓</div><div class="ds-val green">R ${fmt(paid)}</div></div>
-        <div class="dash-stat"><div class="ds-label">BALANCE (R)</div><div class="ds-val orange">R ${fmt(totalBudget - totalActual)}</div></div>
+        <div class="dash-stat"><div class="ds-label">TOTAL (R)</div><div class="ds-val gold">R ${fmt(totalR)}</div></div>
+        <div class="dash-stat"><div class="ds-label">PAID (R)</div><div class="ds-val green">R ${fmt(paidR)}</div></div>
+        <div class="dash-stat"><div class="ds-label">BALANCE (R)</div><div class="ds-val orange">R ${fmt(balanceR)}</div></div>
       </div>
     </div>
   </div>`;
@@ -268,7 +272,7 @@ function renderGuestList(tab) {
   document.getElementById('guest-tbody').innerHTML = list.map(g => `
     <tr>
       <td style="color:var(--text-muted);font-size:12px;">${g.no||''}</td>
-      <td>${g.name||''} <span style="color:var(--text-muted)">${g.surname||''}</span></td>
+      <td style="font-weight:400;font-family:var(--font-body);">${g.name||''} <span style="color:var(--text-muted);font-size:12px;">${g.surname||''}</span></td>
       <td style="color:var(--text-muted);font-size:12px;">${g.group||''}</td>
       <td style="color:var(--text-muted);">${g.table||'–'}</td>
       <td>${rsvpBadge(g.rsvp)}</td>
@@ -505,9 +509,9 @@ async function saveTask() {
 
 // ── EXPENSES ──────────────────────────────────────────────────
 function renderExpenses() {
-  // Nalishka sheet: D=Total(R) → budget, E=Paid(R) → actual, F=Balance(R) → diff
   // Filter out TOTAL summary row and blank rows
   const validExp = state.expenses.filter(e => e.name && String(e.name).toUpperCase() !== 'TOTAL' && e.cat);
+  // Nalishka sheet: budget=Total(R), actual=Paid(R), diff=Balance(R)
   const totalR   = validExp.reduce((a,e) => a + Number(e.budget||0), 0);
   const paidR    = validExp.reduce((a,e) => a + Number(e.actual||0), 0);
   const balanceR = validExp.reduce((a,e) => a + Number(e.diff||0),   0);
@@ -522,7 +526,7 @@ function renderExpenses() {
     const st = e.status==='Paid'?'badge-yes': e.status==='Deposit Paid'?'badge-deposit':'badge-pending';
     return `<tr>
       <td style="color:var(--text-muted);font-size:12px;">${i+1}</td>
-      <td>${e.name}</td>
+      <td style="font-weight:400;">${e.name}</td>
       <td style="font-size:12px;color:var(--text-muted);">${e.cat}</td>
       <td style="color:var(--gold);">R ${fmt(e.budget)}</td>
       <td style="color:#27AE60;">R ${fmt(e.actual)}</td>
