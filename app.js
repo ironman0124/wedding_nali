@@ -127,6 +127,19 @@ function formatDate(d) {
   try { return new Date(d).toLocaleDateString('en-ZA',{weekday:'short',day:'numeric',month:'short',year:'numeric'}); }
   catch(e) { return d; }
 }
+function formatTime(t) {
+  if (!t) return '';
+  // If already in HH:MM or HH:MM:SS format, convert to 12-hour AM/PM
+  var match = String(t).match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if (match) {
+    var h = parseInt(match[1]);
+    var m = match[2];
+    var ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return h + ':' + m + ' ' + ampm;
+  }
+  return t; // return as-is if not a recognisable time format
+}
 function guestList(tab) { return state[tab] || []; }
 
 // ── BANNER ────────────────────────────────────────────────────
@@ -182,7 +195,7 @@ function renderDashboard() {
     const optional  = guests.filter(g => g.rsvp === 'Optional').length;
     const invites   = guests.filter(g => g.invite === 'Yes').length;
     const ev = state.events[t.evIdx] || {};
-    const dateStr = ev.date ? formatDate(ev.date) + (ev.time ? ' · ' + ev.time : '') + (ev.venue ? ' · ' + ev.venue : '') : 'Date TBD — add in Events & Functions tab';
+    const dateStr = ev.date ? formatDate(ev.date) + (ev.time ? ' · ' + formatTime(ev.time) : '') + (ev.venue ? ' · ' + ev.venue : '') : 'Date TBD — add in Events & Functions tab';
 
     html += `
     <div class="dash-event-block ${t.color}">
@@ -255,7 +268,7 @@ function renderGuestList(tab) {
   document.getElementById('guest-tbody').innerHTML = list.map(g => `
     <tr>
       <td style="color:var(--text-muted);font-size:12px;">${g.no||''}</td>
-      <td><strong>${g.name||''}</strong> <span style="color:var(--text-muted)">${g.surname||''}</span></td>
+      <td>${g.name||''} <span style="color:var(--text-muted)">${g.surname||''}</span></td>
       <td style="color:var(--text-muted);font-size:12px;">${g.group||''}</td>
       <td style="color:var(--text-muted);">${g.table||'–'}</td>
       <td>${rsvpBadge(g.rsvp)}</td>
@@ -358,7 +371,7 @@ function renderEvents() {
     <div class="event-card">
       <div>
         <div class="event-card-name">${e.name}</div>
-        <div class="event-card-meta">${formatDate(e.date)}${e.time?' · '+e.time:''}${e.venue?' · '+e.venue:''}</div>
+        <div class="event-card-meta">${formatDate(e.date)}${e.time?' · '+formatTime(e.time):''}${e.venue?' · '+e.venue:''}</div>
         ${e.notes?`<div class="event-card-meta" style="margin-top:4px;">${e.notes}</div>`:''}
       </div>
       <button class="btn-icon" onclick="editEvent(${e.row})">✎</button>
@@ -502,12 +515,12 @@ function renderExpenses() {
     <div class="stat-card green"><div class="stat-label">PAID</div><div class="stat-value" style="font-size:1.3rem;">R ${fmt(paid)}</div></div>
     <div class="stat-card orange"><div class="stat-label">OUTSTANDING</div><div class="stat-value" style="font-size:1.3rem;">R ${fmt(totalB-paid)}</div></div>`;
 
-  document.getElementById('expense-tbody').innerHTML = state.expenses.map((e,i) => {
+  document.getElementById('expense-tbody').innerHTML = state.expenses.filter(e => e.name && e.name.toString().toUpperCase() !== 'TOTAL' && e.cat !== '').map((e,i) => {
     const diff = Number(e.budget||0) - Number(e.actual||0);
     const st = e.status==='Paid'?'badge-yes': e.status==='Deposit Paid'?'badge-deposit':'badge-pending';
     return `<tr>
       <td style="color:var(--text-muted);font-size:12px;">${i+1}</td>
-      <td><strong>${e.name}</strong></td>
+      <td>${e.name}</td>
       <td style="font-size:12px;color:var(--text-muted);">${e.cat}</td>
       <td style="color:var(--gold);">R ${fmt(e.budget)}</td>
       <td>R ${fmt(e.actual)}</td>
