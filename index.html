@@ -125,7 +125,7 @@
       <div class="stats-grid" id="expense-stats"></div>
       <div class="table-wrap" style="margin-top:1.5rem">
         <table class="data-table">
-          <thead><tr><th>#</th><th>Item</th><th>Category</th><th>Total (R)</th><th>Paid (R)</th><th>Balance (R)</th><th>Status</th><th></th></tr></thead>
+          <thead><tr><th>#</th><th>Item</th><th>Category</th><th>Budgeted (R)</th><th>Actual (R)</th><th>Diff (R)</th><th>Status</th><th></th></tr></thead>
           <tbody id="expense-tbody"></tbody>
         </table>
       </div>
@@ -180,7 +180,7 @@
     <div class="modal-body">
       <div class="form-group"><label>Description</label><input id="ex-name" type="text"></div>
       <div class="form-row"><div class="form-group"><label>Category</label><select id="ex-cat"><option>Venue</option><option>Catering</option><option>Attire – Bride</option><option>Attire – Groom</option><option>Photography</option><option>Videography</option><option>Flowers / Decor</option><option>Music / DJ</option><option>Transport</option><option>Invitations</option><option>Cake</option><option>Hair & Makeup</option><option>Gifts</option><option>Honeymoon</option><option>Miscellaneous</option></select></div><div class="form-group"><label>Status</label><select id="ex-status"><option>Pending</option><option>Deposit Paid</option><option>Paid</option></select></div></div>
-      <div class="form-row"><div class="form-group"><label>Total (R)</label><input id="ex-budget" type="number" placeholder="0"></div><div class="form-group"><label>Paid (R)</label><input id="ex-actual" type="number" placeholder="0"></div></div>
+      <div class="form-row"><div class="form-group"><label>Budgeted (R)</label><input id="ex-budget" type="number" placeholder="0"></div><div class="form-group"><label>Actual (R)</label><input id="ex-actual" type="number" placeholder="0"></div></div>
       <div class="form-group"><label>Notes</label><input id="ex-notes" type="text"></div>
     </div>
     <div class="modal-footer"><button class="btn-secondary" onclick="closeModal('modal-expense')">Cancel</button><button class="btn-primary" onclick="saveExpense()">Save</button></div>
