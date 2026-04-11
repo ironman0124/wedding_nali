@@ -1,5 +1,5 @@
 # 💍 Dharmesh & Nalishka — Wedding Planner
-### ironman0124.github.io/wedding
+### ironman0124.github.io/wedding_nali
 
 ---
 
@@ -8,7 +8,7 @@
 ### Step 1 — Create the repository
 1. Go to [github.com](https://github.com) and sign in as **ironman0124**
 2. Click the **+** button (top right) → **New repository**
-3. Repository name: `wedding`
+3. Repository name: `wedding_nali`
 4. Set to **Public**
 5. Click **Create repository**
 
@@ -27,21 +27,21 @@
 3. Under **Source**, select **Deploy from a branch**
 4. Branch: **main** / folder: **/ (root)**
 5. Click **Save**
-6. Wait ~2 minutes then visit: **ironman0124.github.io/wedding**
+6. Wait ~2 minutes then visit: **ironman0124.github.io/wedding_nali**
 
 ---
 
 ## 🔐 Login credentials
-- **Username:** ironman0124
-- **Password:** Ironman!2401
+- **Username:** nali2808
+- **Password:** Nali!2808
 
 > ⚠️ To change the password, open `app.js` and edit line 8:
-> `const CREDENTIALS = { username: 'ironman0124', password: 'Ironman!2401' };`
+> `const CREDENTIALS = { username: 'nali2808', password: 'Nali!2808' };`
 
 ---
 
 ## 📱 Add to iPhone home screen
-1. Open Safari and go to **ironman0124.github.io/wedding**
+1. Open Safari and go to **ironman0124.github.io/wedding_nali**
 2. Tap the **Share** button (box with arrow)
 3. Scroll down and tap **Add to Home Screen**
 4. Name it "Wedding" → tap **Add**
