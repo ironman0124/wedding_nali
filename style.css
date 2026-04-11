@@ -999,3 +999,81 @@ body {
   .dash-event-stats { grid-template-columns: repeat(3,1fr); }
   .guest-tabs { flex-wrap: wrap; }
 }
+
+
+/* ══════════════════════════════════════════════
+   MOBILE RESPONSIVENESS — iOS & Android
+══════════════════════════════════════════════ */
+
+/* Safe area for iPhone notch/home indicator */
+@supports (padding: max(0px)) {
+  .sidebar { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+  .topbar  { padding-top: max(0px, env(safe-area-inset-top)); }
+  body     { padding-bottom: env(safe-area-inset-bottom); }
+}
+
+/* Prevent horizontal scroll on mobile */
+html, body { overflow-x: hidden; max-width: 100vw; }
+
+/* Dashboard event stats: wrap on very small screens */
+.dash-event-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 0;
+  background: var(--dark2);
+}
+
+/* Stats grid: 2 columns on mobile */
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .dash-event-stats { grid-template-columns: repeat(3, 1fr); }
+  .dash-stat { padding: 0.5rem 0.5rem; }
+  .ds-val { font-size: 1.2rem; }
+  .ds-label { font-size: 9px; }
+  .dash-event-title { font-size: 12px; padding: 0.5rem 0.75rem; }
+  .dash-event-date  { font-size: 11px; padding: 0.3rem 0.75rem; }
+  .section { padding: 1rem 0.75rem; }
+  .section-header h2 { font-size: 1.3rem; }
+  .btn-primary { padding: 0.5rem 0.9rem; font-size: 11px; }
+  .guest-tab-btn { padding: 6px 12px; font-size: 12px; }
+  .modal { margin: 0.5rem; }
+  .form-row { grid-template-columns: 1fr; gap: 0.5rem; }
+  .data-table th, .data-table td { padding: 0.4rem 0.6rem; font-size: 12px; }
+  .sidebar-names { font-size: 1.1rem; }
+  .topbar { padding: 0 1rem; }
+  .topbar-title { font-size: 14px; }
+}
+
+/* Table scrollable on mobile */
+@media (max-width: 768px) {
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .data-table { min-width: 500px; }
+  .dash-row-2 { grid-template-columns: 1fr; }
+  .filter-bar { flex-direction: column; gap: 0.5rem; }
+  .search-input { min-width: unset; width: 100%; }
+  .filter-select { width: 100%; }
+  .event-card { flex-direction: column; gap: 0.5rem; }
+  .login-card { padding: 1.5rem 1.25rem; margin: 1rem; }
+  .login-names { font-size: 1.5rem; }
+  .reactor-ring { width: 56px; height: 56px; }
+  .reactor-core { width: 22px; height: 22px; }
+  .modal { max-height: 95vh; }
+  .modal-body { padding: 1rem; }
+  .task-meta { flex-wrap: wrap; }
+}
+
+/* Prevent zoom on input focus on iOS */
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Touch-friendly button sizing */
+@media (max-width: 768px) {
+  .btn-icon { padding: 8px 10px; min-width: 36px; min-height: 36px; }
+  .task-check { width: 22px; height: 22px; }
+  .nav-link { padding: 0.9rem 1.25rem; }
+  .guest-tabs { flex-wrap: wrap; }
+  .guest-tab-btn { flex: 1; min-width: 80px; text-align: center; }
+}

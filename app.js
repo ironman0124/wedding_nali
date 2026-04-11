@@ -215,9 +215,9 @@ function toggleSidebar() {
 // ── DASHBOARD ─────────────────────────────────────────────────
 function renderDashboard() {
   const tabs = [
-    { key:'haldi',   label:'🌿 Haldi Day', 			color:'teal',   evIdx:1 },
-	{ key:'mendhi',  label:'💃 Mendhi Day', 		color:'purple',   evIdx:2 },
-    { key:'wedding', label:'💍 Wedding Day',        color:'red',    evIdx:3 },
+    { key:'haldi',   label:'🌿 Haldi Day',   color:'teal',   eventName:'Haldi' },
+    { key:'mendhi',  label:'💃 Mendhi Day',  color:'purple', eventName:'Mendhi' },
+    { key:'wedding', label:'💍 Wedding Day', color:'red',    eventName:'Wedding' },
   ];
 
   let html = '';
@@ -229,13 +229,14 @@ function renderDashboard() {
     const declined  = guests.filter(g => g.rsvp === 'No').length;
     const optional  = guests.filter(g => g.rsvp === 'Optional').length;
     const invites   = guests.filter(g => g.invite === 'Yes').length;
-    const ev = state.events[t.evIdx] || {};
+    // Match event by name (case-insensitive partial match)
+    const ev = state.events.find(e => e.name && e.name.toLowerCase().includes(t.eventName.toLowerCase())) || {};
     const dateStr = ev.date ? formatDate(ev.date) + (ev.time ? ' · ' + formatTime(ev.time) : '') + (ev.venue ? ' · ' + ev.venue : '') : 'Date TBD — add in Events & Functions tab';
 
     html += `
     <div class="dash-event-block ${t.color}">
-      <div class="dash-event-title">${t.label}</div>
-      <div class="dash-event-date">📅 ${dateStr}</div>
+      <div class="dash-event-title" style="text-align:center;">${t.label}</div>
+      <div class="dash-event-date" style="text-align:center;">📅 ${dateStr}</div>
       <div class="dash-event-stats">
         <div class="dash-stat"><div class="ds-label">TOTAL</div><div class="ds-val">${total}</div></div>
         <div class="dash-stat"><div class="ds-label">CONFIRMED ✓</div><div class="ds-val green">${confirmed}</div></div>
@@ -425,7 +426,14 @@ async function saveGuest() {
 
 // ── EVENTS ────────────────────────────────────────────────────
 function renderEvents() {
-  document.getElementById('events-list').innerHTML = state.events.map(e => `
+  // Sort chronologically — events with dates first (ascending), then TBD events
+  const sortedEvents = [...state.events].sort((a, b) => {
+    if (a.date && b.date) return new Date(a.date) - new Date(b.date);
+    if (a.date && !b.date) return -1;
+    if (!a.date && b.date) return 1;
+    return 0;
+  });
+  document.getElementById('events-list').innerHTML = sortedEvents.map(e => `
     <div class="event-card">
       <div>
         <div class="event-card-name">${e.name}</div>
@@ -616,7 +624,7 @@ async function deleteTask(row) {
 }
 
 function openAddTask() {
-  ['t-text','t-assign','t-due'].forEach(id => {
+  ['t-text','t-assign','t-due','t-notes'].forEach(id => {
     const el = document.getElementById(id); if(el) el.value='';
   });
   document.getElementById('t-cat').value    = 'Other';
@@ -634,6 +642,7 @@ function openEditTask(row) {
   document.getElementById('t-assign').value = t.assign || '';
   document.getElementById('t-due').value    = t.due    || '';
   document.getElementById('t-status').value = t.status || 'Pending';
+  document.getElementById('t-notes').value  = t.notes  || '';
   window._editTaskRow = row;
   document.getElementById('task-modal-title').textContent = 'Edit Task';
   openModal('modal-task');
@@ -646,7 +655,7 @@ async function saveTask() {
     assign: document.getElementById('t-assign').value.trim(),
     due:    document.getElementById('t-due').value,
     status: document.getElementById('t-status').value || 'Pending',
-    notes:  ''
+    notes:  (document.getElementById('t-notes') ? document.getElementById('t-notes').value.trim() : '')
   };
   if (!data.text) return;
   const row = window._editTaskRow;  // capture BEFORE closeModal resets it
