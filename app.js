@@ -129,16 +129,30 @@ function formatDate(d) {
 }
 function formatTime(t) {
   if (!t) return '';
-  // Convert HH:MM or HH:MM:SS to 12-hour format with seconds: e.g. 11:00:00 AM
   var s = String(t).trim();
+  // Handle ISO datetime from Google Sheets e.g. "1899-12-30T21:00:00.000Z"
+  if (s.indexOf('T') !== -1) {
+    var parts = s.split('T');
+    var timePart = parts[1] ? parts[1].replace('Z','').replace('.000','') : '';
+    var match = timePart.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+    if (match) {
+      var h = parseInt(match[1], 10);
+      var m = match[2];
+      var sec = match[3] || '00';
+      var ampm = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      return h + ':' + m + ':' + sec + ' ' + ampm;
+    }
+  }
+  // Handle plain HH:MM or HH:MM:SS
   var match = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
   if (match) {
-    var h   = parseInt(match[1], 10);
-    var m   = match[2];
-    var sec = match[3] ? ':' + match[3] : ':00';
+    var h = parseInt(match[1], 10);
+    var m = match[2];
+    var sec = match[3] || '00';
     var ampm = h >= 12 ? 'PM' : 'AM';
     h = h % 12 || 12;
-    return h + ':' + m + sec + ' ' + ampm;
+    return h + ':' + m + ':' + sec + ' ' + ampm;
   }
   return s;
 }
@@ -278,12 +292,30 @@ function renderGuestList(tab) {
       <td>${rsvpBadge(g.rsvp)}</td>
       <td><span class="badge ${g.invite==='Yes'?'badge-yes':'badge-no'}">${g.invite||'No'}</span></td>
       <td style="color:var(--text-muted);font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${g.notes||''}</td>
-      <td><button class="btn-icon" onclick="editGuest('${tab}',${g.row})">✎</button></td>
+      <td style="display:flex;gap:4px;">
+        <button class="btn-icon" onclick="editGuest('${tab}',${g.row})" title="Edit">✎</button>
+        <button class="btn-icon" style="color:var(--red);" onclick="deleteGuest('${tab}',${g.row})" title="Delete">🗑</button>
+      </td>
     </tr>`).join('') || `<tr><td colspan="8" class="empty-state">No guests found</td></tr>`;
 
   document.getElementById('guest-count').textContent = `Showing ${list.length} of ${guestList(tab).length} guests`;
 }
 
+
+async function deleteGuest(tab, row) {
+  if (!confirm('Remove this guest from the list?')) return;
+  showBanner('🗑 Deleting guest…', 'info');
+  const res = await apiPost({ action: 'deleteGuest', sheet: tab, row });
+  if (res && res.status === 'ok') {
+    state[tab] = state[tab].filter(g => g.row !== row);
+    saveLocal();
+    renderGuestList(tab);
+    renderDashboard();
+    showBanner('✅ Guest deleted!', 'success', 3000);
+  } else {
+    showBanner('⚠️ Could not delete guest', 'error', 4000);
+  }
+}
 function editGuest(tab, row) {
   const g = guestList(tab).find(x => x.row === row);
   if (!g) return;
@@ -323,7 +355,6 @@ async function saveGuest() {
     table:   document.getElementById('g-table').value,
     rsvp:    document.getElementById('g-rsvp').value,
     invite:  document.getElementById('g-invite').value,
-    diet:    document.getElementById('g-diet').value.trim(),
     contact: document.getElementById('g-contact').value.trim(),
     notes:   document.getElementById('g-notes').value.trim(),
   };
@@ -336,16 +367,19 @@ async function saveGuest() {
   const row = window._editGuestRow;
 
   if (row) {
-    // Update existing
+    // Update existing — send full row including name, surname, group
     const res = await apiPost({
       action: 'updateGuestRSVP', sheet: tab, row,
-      rsvp: data.rsvp, invite: data.invite, table: data.table,
-      diet: data.diet, contact: data.contact, notes: data.notes
+      name: data.name, surname: data.surname, group: data.group,
+      table: data.table, rsvp: data.rsvp, invite: data.invite,
+      contact: data.contact, notes: data.notes
     });
     if (res && res.status === 'ok') {
       const g = state[tab].find(x => x.row === row);
       if (g) Object.assign(g, data);
       showBanner('✅ Saved to Google Sheets!', 'success', 3000);
+    } else {
+      showBanner('⚠️ Could not save to Google Sheets', 'error', 4000);
     }
   } else {
     // Add new
@@ -378,10 +412,28 @@ function renderEvents() {
         <div class="event-card-meta">${formatDate(e.date)}${e.time?' · '+formatTime(e.time):''}${e.venue?' · '+e.venue:''}</div>
         ${e.notes?`<div class="event-card-meta" style="margin-top:4px;">${e.notes}</div>`:''}
       </div>
-      <button class="btn-icon" onclick="editEvent(${e.row})">✎</button>
+      <div style="display:flex;gap:6px;flex-shrink:0;">
+        <button class="btn-icon" onclick="editEvent(${e.row})" title="Edit">✎</button>
+        <button class="btn-icon" style="color:var(--red);" onclick="deleteEvent(${e.row})" title="Delete">🗑</button>
+      </div>
     </div>`).join('') || `<div class="empty-state">No events yet</div>`;
 }
 
+
+async function deleteEvent(row) {
+  if (!confirm('Remove this event?')) return;
+  showBanner('🗑 Deleting event…', 'info');
+  const res = await apiPost({ action: 'deleteEvent', row });
+  if (res && res.status === 'ok') {
+    state.events = state.events.filter(e => e.row !== row);
+    saveLocal();
+    renderEvents();
+    renderDashboard();
+    showBanner('✅ Event deleted!', 'success', 3000);
+  } else {
+    showBanner('⚠️ Could not delete event', 'error', 4000);
+  }
+}
 function editEvent(row) {
   const e = state.events.find(x => x.row === row);
   if (!e) return;
@@ -422,6 +474,9 @@ async function saveEvent() {
     if (res && res.status === 'ok') {
       const e = state.events.find(x => x.row === row);
       if (e) Object.assign(e, data);
+      showBanner('✅ Event updated!', 'success', 3000);
+    } else {
+      showBanner('⚠️ Could not update event', 'error', 4000);
     }
   } else {
     res = await apiPost({ action: 'addEvent', data });
@@ -451,12 +506,20 @@ function renderTasks() {
     const done = t.done || t.status === 'Done';
     return `
     <div class="task-item" style="background:var(--dark2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:0.5rem;padding:0.9rem 1rem;">
-      <div class="task-check ${done?'done':''}" onclick="toggleTask(${t.row})">${done?'✓':''}</div>
+      <div class="task-check ${done?'done':''}" onclick="toggleTask(${t.row})" title="${done?'Mark pending':'Mark done'}">${done?'✓':''}</div>
       <div style="flex:1;">
-        <div class="task-text ${done?'done':''}">${t.text}</div>
-        <div class="task-meta">${t.cat||''}${t.assign?' · '+t.assign:''}${t.due?' · Due '+formatDate(t.due):''}</div>
+        <div class="task-text ${done?'done':''}" style="font-weight:400;">${t.text}</div>
+        <div class="task-meta" style="margin-top:3px;">
+          <span style="color:var(--gold);font-size:11px;">${t.cat||''}</span>
+          ${t.assign?`<span style="color:var(--text-muted);font-size:11px;"> · ${t.assign}</span>`:''}
+          ${t.due?`<span style="color:var(--text-muted);font-size:11px;"> · Due ${formatDate(t.due)}</span>`:''}
+          <span style="margin-left:4px;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:600;background:${done?'rgba(39,174,96,0.2)':'rgba(230,126,34,0.2)'};color:${done?'#27AE60':'#E67E22'};">${t.status||'Pending'}</span>
+        </div>
       </div>
-      <button class="btn-icon" style="color:var(--red-dark);" onclick="deleteTaskLocal(${t.row})">✕</button>
+      <div style="display:flex;gap:4px;flex-shrink:0;">
+        <button class="btn-icon" onclick="openEditTask(${t.row})" title="Edit">✎</button>
+        <button class="btn-icon" style="color:var(--red);" onclick="deleteTask(${t.row})" title="Delete">🗑</button>
+      </div>
     </div>`;
   }).join('') || `<div class="empty-state">No tasks found 🎉</div>`;
 }
@@ -469,19 +532,46 @@ async function toggleTask(row) {
   saveLocal();
   renderTasks();
   renderDashboard();
-  await apiPost({ action: 'updateTask', row, data: t });
+  const res = await apiPost({ action: 'updateTask', row, data: t });
+  if (res && res.status === 'ok') {
+    showBanner('✅ Task updated!', 'success', 2000);
+  }
 }
 
-function deleteTaskLocal(row) {
-  state.tasks = state.tasks.filter(t => t.row !== row);
-  saveLocal(); renderTasks(); renderDashboard();
+async function deleteTask(row) {
+  if (!confirm('Delete this task?')) return;
+  showBanner('🗑 Deleting task…', 'info');
+  const res = await apiPost({ action: 'deleteTask', row });
+  if (res && res.status === 'ok') {
+    state.tasks = state.tasks.filter(t => t.row !== row);
+    saveLocal(); renderTasks(); renderDashboard();
+    showBanner('✅ Task deleted!', 'success', 3000);
+  } else {
+    showBanner('⚠️ Could not delete task', 'error', 4000);
+  }
 }
 
 function openAddTask() {
   ['t-text','t-assign','t-due'].forEach(id => {
     const el = document.getElementById(id); if(el) el.value='';
   });
-  document.getElementById('t-cat').value = 'Other';
+  document.getElementById('t-cat').value    = 'Other';
+  document.getElementById('t-status').value = 'Pending';
+  window._editTaskRow = null;
+  document.getElementById('task-modal-title').textContent = 'Add Task';
+  openModal('modal-task');
+}
+
+function openEditTask(row) {
+  const t = state.tasks.find(x => x.row === row);
+  if (!t) return;
+  document.getElementById('t-text').value   = t.text   || '';
+  document.getElementById('t-cat').value    = t.cat    || 'Other';
+  document.getElementById('t-assign').value = t.assign || '';
+  document.getElementById('t-due').value    = t.due    || '';
+  document.getElementById('t-status').value = t.status || 'Pending';
+  window._editTaskRow = row;
+  document.getElementById('task-modal-title').textContent = 'Edit Task';
   openModal('modal-task');
 }
 
@@ -491,18 +581,33 @@ async function saveTask() {
     cat:    document.getElementById('t-cat').value,
     assign: document.getElementById('t-assign').value.trim(),
     due:    document.getElementById('t-due').value,
-    status: 'Pending', notes: ''
+    status: document.getElementById('t-status').value || 'Pending',
+    notes:  ''
   };
   if (!data.text) return;
   closeModal('modal-task');
   showBanner('💾 Saving task…', 'info');
-  const res = await apiPost({ action: 'addTask', data });
-  if (res && res.status === 'ok') {
-    const fresh = await apiGet('tasks');
-    if (fresh) state.tasks = fresh.tasks || state.tasks;
-    showBanner('✅ Task saved!', 'success', 3000);
+  const row = window._editTaskRow;
+  if (row) {
+    // Update existing task
+    const res = await apiPost({ action: 'updateTask', row, data });
+    if (res && res.status === 'ok') {
+      const t = state.tasks.find(x => x.row === row);
+      if (t) Object.assign(t, data, { done: data.status === 'Done' });
+      showBanner('✅ Task updated!', 'success', 3000);
+    } else {
+      showBanner('⚠️ Could not update task', 'error', 4000);
+    }
   } else {
-    state.tasks.push({ ...data, row: Date.now(), done: false });
+    // Add new task
+    const res = await apiPost({ action: 'addTask', data });
+    if (res && res.status === 'ok') {
+      const fresh = await apiGet('tasks');
+      if (fresh) state.tasks = fresh.tasks || state.tasks;
+      showBanner('✅ Task saved!', 'success', 3000);
+    } else {
+      state.tasks.push({ ...data, row: Date.now(), done: false });
+    }
   }
   saveLocal(); renderTasks(); renderDashboard();
 }
@@ -532,11 +637,27 @@ function renderExpenses() {
       <td style="color:#27AE60;">R ${fmt(e.actual)}</td>
       <td style="color:${balColor};font-weight:600;">R ${fmt(e.diff)}</td>
       <td><span class="badge ${st}">${e.status}</span></td>
-      <td><button class="btn-icon" onclick="editExpense(${e.row})">✎</button></td>
+      <td style="display:flex;gap:4px;">
+        <button class="btn-icon" onclick="editExpense(${e.row})" title="Edit">✎</button>
+        <button class="btn-icon" style="color:var(--red);" onclick="deleteExpense(${e.row})" title="Delete">🗑</button>
+      </td>
     </tr>`;
   }).join('') || `<tr><td colspan="8" class="empty-state">No expenses yet</td></tr>`;
 }
 
+
+async function deleteExpense(row) {
+  if (!confirm('Delete this expense?')) return;
+  showBanner('🗑 Deleting expense…', 'info');
+  const res = await apiPost({ action: 'deleteExpense', row });
+  if (res && res.status === 'ok') {
+    state.expenses = state.expenses.filter(e => e.row !== row);
+    saveLocal(); renderExpenses(); renderDashboard();
+    showBanner('✅ Expense deleted!', 'success', 3000);
+  } else {
+    showBanner('⚠️ Could not delete expense', 'error', 4000);
+  }
+}
 function editExpense(row) {
   const e = state.expenses.find(x => x.row === row);
   if (!e) return;

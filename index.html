@@ -141,7 +141,6 @@
       <div class="form-row"><div class="form-group"><label>First Name</label><input id="g-name" type="text"></div><div class="form-group"><label>Surname</label><input id="g-surname" type="text"></div></div>
       <div class="form-row"><div class="form-group"><label>Group</label><select id="g-group"><option>Family</option><option>Friends</option><option>Work</option><option>Other</option></select></div><div class="form-group"><label>Table No.</label><input id="g-table" type="number"></div></div>
       <div class="form-row"><div class="form-group"><label>RSVP Status</label><select id="g-rsvp"><option>Pending</option><option>Yes</option><option>No</option><option>Optional</option></select></div><div class="form-group"><label>Invite Sent?</label><select id="g-invite"><option>No</option><option>Yes</option></select></div></div>
-      <div class="form-group"><label>Dietary Notes</label><input id="g-diet" type="text"></div>
       <div class="form-group"><label>WhatsApp / Contact</label><input id="g-contact" type="text"></div>
       <div class="form-group"><label>Notes</label><input id="g-notes" type="text"></div>
     </div>
@@ -164,11 +163,12 @@
 
 <div class="modal-overlay" id="modal-task" onclick="if(event.target===this)closeModal('modal-task')">
   <div class="modal">
-    <div class="modal-header"><h3>Add Task</h3><button onclick="closeModal('modal-task')">✕</button></div>
+    <div class="modal-header"><h3 id="task-modal-title">Add Task</h3><button onclick="closeModal('modal-task')">✕</button></div>
     <div class="modal-body">
       <div class="form-group"><label>Task Description</label><input id="t-text" type="text"></div>
       <div class="form-row"><div class="form-group"><label>Category</label><select id="t-cat"><option>Ceremony</option><option>Logistics</option><option>Vendor</option><option>Attire</option><option>Guest</option><option>Other</option></select></div><div class="form-group"><label>Assigned To</label><input id="t-assign" type="text"></div></div>
       <div class="form-group"><label>Due Date</label><input id="t-due" type="date"></div>
+      <div class="form-group"><label>Status</label><select id="t-status"><option value="Pending">Pending</option><option value="In Progress">In Progress</option><option value="Done">Done</option><option value="Cancelled">Cancelled</option></select></div>
     </div>
     <div class="modal-footer"><button class="btn-secondary" onclick="closeModal('modal-task')">Cancel</button><button class="btn-primary" onclick="saveTask()">Save</button></div>
   </div>
