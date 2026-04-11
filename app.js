@@ -131,43 +131,43 @@ function formatTime(t) {
   if (!t) return '';
   var s = String(t).trim();
 
-  // Case 1: Full JS Date.toString() e.g. "Sat Dec 30 1899 20:30:00 GMT+0130 (South Africa Standard Time)"
-  // or "Sat Dec 30 1899 20:30:00 GMT+0200"
-  if (s.indexOf('GMT') !== -1 || s.match(/^[A-Z][a-z]{2} [A-Z]/)) {
-    try {
-      var d = new Date(s);
-      if (!isNaN(d.getTime())) {
-        var h   = d.getUTCHours();
-        var m   = String(d.getUTCMinutes()).padStart(2,'0');
-        var sec = String(d.getUTCSeconds()).padStart(2,'0');
-        var ampm = h >= 12 ? 'PM' : 'AM';
-        h = h % 12 || 12;
-        return h + ':' + m + ':' + sec + ' ' + ampm;
-      }
-    } catch(e) {}
+  // Case 1: Full JS Date.toString() e.g. "Sat Dec 30 1899 11:00:00 GMT+0200 (SAST)"
+  // Extract the TIME PART directly from the string (local time as shown)
+  // Format: "DayName Mon DD YYYY HH:MM:SS GMToffset (TZname)"
+  var gmtMatch = s.match(/\d{4}\s+(\d{1,2}):(\d{2}):(\d{2})\s+GMT/);
+  if (gmtMatch) {
+    var h   = parseInt(gmtMatch[1], 10);
+    var m   = gmtMatch[2];
+    var sec = gmtMatch[3];
+    var ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return h + ':' + m + ':' + sec + ' ' + ampm;
   }
 
-  // Case 2: ISO datetime string e.g. "1899-12-30T21:00:00.000Z" or "2027-12-15T09:00:00.000Z"
-  if (s.indexOf('T') !== -1) {
-    try {
-      var d = new Date(s);
-      if (!isNaN(d.getTime())) {
-        var h   = d.getUTCHours();
-        var m   = String(d.getUTCMinutes()).padStart(2,'0');
-        var sec = String(d.getUTCSeconds()).padStart(2,'0');
-        var ampm = h >= 12 ? 'PM' : 'AM';
-        h = h % 12 || 12;
-        return h + ':' + m + ':' + sec + ' ' + ampm;
-      }
-    } catch(e) {}
+  // Case 2: ISO datetime string e.g. "1899-12-30T09:00:00.000Z"
+  // Here we must NOT use UTC — the UTC hours are wrong due to timezone
+  // Instead skip this and let Code.gs send plain strings via Session.getScriptTimeZone()
+  if (s.indexOf('T') !== -1 && s.indexOf('Z') !== -1) {
+    // Parse as ISO and use UTC hours (this is what Code.gs 'UTC' format gives)
+    // BUT since this may be wrong timezone, just extract the time digits
+    var tPart = s.split('T')[1] || '';
+    var isoMatch = tPart.match(/^(\d{2}):(\d{2}):(\d{2})/);
+    if (isoMatch) {
+      var h   = parseInt(isoMatch[1], 10);
+      var m   = isoMatch[2];
+      var sec = isoMatch[3];
+      var ampm = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      return h + ':' + m + ':' + sec + ' ' + ampm;
+    }
   }
 
-  // Case 3: Plain HH:MM or HH:MM:SS string e.g. "11:00" or "11:00:00"
-  var match = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
-  if (match) {
-    var h   = parseInt(match[1], 10);
-    var m   = match[2];
-    var sec = match[3] || '00';
+  // Case 3: Plain HH:MM or HH:MM:SS string e.g. "11:00:00" or "11:00"
+  var plainMatch = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if (plainMatch) {
+    var h   = parseInt(plainMatch[1], 10);
+    var m   = plainMatch[2];
+    var sec = plainMatch[3] || '00';
     var ampm = h >= 12 ? 'PM' : 'AM';
     h = h % 12 || 12;
     return h + ':' + m + ':' + sec + ' ' + ampm;
@@ -354,7 +354,7 @@ function editGuest(tab, row) {
 
 function openAddGuest() {
   document.getElementById('g-modal-title').textContent = 'Add Guest';
-  ['g-name','g-surname','g-table','g-diet','g-contact','g-notes'].forEach(id => {
+  ['g-name','g-surname','g-table','g-contact','g-notes'].forEach(id => {
     const el = document.getElementById(id); if(el) el.value='';
   });
   document.getElementById('g-group').value  = 'Family';
@@ -469,23 +469,21 @@ function editEvent(row) {
       }
     } catch(_) { dateVal = e.date; }
   }
-  // Clean time for the text input — convert any format to HH:MM:SS
+  // Clean time for the text input — extract HH:MM:SS
   let timeVal = '';
   if (e.time) {
     const t = String(e.time);
-    // If it's a full Date string or ISO, extract HH:MM:SS using Date parsing
-    if (t.indexOf('GMT') !== -1 || t.indexOf('T') !== -1 || t.match(/^[A-Z][a-z]{2} [A-Z]/)) {
-      try {
-        const d = new Date(t);
-        if (!isNaN(d.getTime())) {
-          const hh = String(d.getUTCHours()).padStart(2,'0');
-          const mm = String(d.getUTCMinutes()).padStart(2,'0');
-          const ss = String(d.getUTCSeconds()).padStart(2,'0');
-          timeVal = hh + ':' + mm + ':' + ss;
-        }
-      } catch(_) { timeVal = t.substring(0,8); }
+    // Case 1: Full Date.toString() — extract the time digits shown in the string
+    // e.g. "Sat Dec 30 1899 11:00:00 GMT+0200" -> "11:00:00"
+    const gmtM = t.match(/\d{4}\s+(\d{1,2}):(\d{2}):(\d{2})\s+GMT/);
+    if (gmtM) {
+      timeVal = gmtM[1].padStart(2,'0') + ':' + gmtM[2] + ':' + gmtM[3];
+    } else if (t.indexOf('T') !== -1) {
+      // Case 2: ISO string — extract time part directly
+      const tPart = (t.split('T')[1] || '').replace('Z','').replace('.000','');
+      timeVal = tPart.substring(0,8);
     } else {
-      // Plain HH:MM or HH:MM:SS string
+      // Case 3: Plain string already
       timeVal = t.substring(0,8);
     }
   }
