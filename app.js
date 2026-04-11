@@ -130,30 +130,49 @@ function formatDate(d) {
 function formatTime(t) {
   if (!t) return '';
   var s = String(t).trim();
-  // Handle ISO datetime from Google Sheets e.g. "1899-12-30T21:00:00.000Z"
-  if (s.indexOf('T') !== -1) {
-    var parts = s.split('T');
-    var timePart = parts[1] ? parts[1].replace('Z','').replace('.000','') : '';
-    var match = timePart.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
-    if (match) {
-      var h = parseInt(match[1], 10);
-      var m = match[2];
-      var sec = match[3] || '00';
-      var ampm = h >= 12 ? 'PM' : 'AM';
-      h = h % 12 || 12;
-      return h + ':' + m + ':' + sec + ' ' + ampm;
-    }
+
+  // Case 1: Full JS Date.toString() e.g. "Sat Dec 30 1899 20:30:00 GMT+0130 (South Africa Standard Time)"
+  // or "Sat Dec 30 1899 20:30:00 GMT+0200"
+  if (s.indexOf('GMT') !== -1 || s.match(/^[A-Z][a-z]{2} [A-Z]/)) {
+    try {
+      var d = new Date(s);
+      if (!isNaN(d.getTime())) {
+        var h   = d.getUTCHours();
+        var m   = String(d.getUTCMinutes()).padStart(2,'0');
+        var sec = String(d.getUTCSeconds()).padStart(2,'0');
+        var ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12 || 12;
+        return h + ':' + m + ':' + sec + ' ' + ampm;
+      }
+    } catch(e) {}
   }
-  // Handle plain HH:MM or HH:MM:SS
+
+  // Case 2: ISO datetime string e.g. "1899-12-30T21:00:00.000Z" or "2027-12-15T09:00:00.000Z"
+  if (s.indexOf('T') !== -1) {
+    try {
+      var d = new Date(s);
+      if (!isNaN(d.getTime())) {
+        var h   = d.getUTCHours();
+        var m   = String(d.getUTCMinutes()).padStart(2,'0');
+        var sec = String(d.getUTCSeconds()).padStart(2,'0');
+        var ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12 || 12;
+        return h + ':' + m + ':' + sec + ' ' + ampm;
+      }
+    } catch(e) {}
+  }
+
+  // Case 3: Plain HH:MM or HH:MM:SS string e.g. "11:00" or "11:00:00"
   var match = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
   if (match) {
-    var h = parseInt(match[1], 10);
-    var m = match[2];
+    var h   = parseInt(match[1], 10);
+    var m   = match[2];
     var sec = match[3] || '00';
     var ampm = h >= 12 ? 'PM' : 'AM';
     h = h % 12 || 12;
     return h + ':' + m + ':' + sec + ' ' + ampm;
   }
+
   return s;
 }
 function guestList(tab) { return state[tab] || []; }
@@ -359,11 +378,13 @@ async function saveGuest() {
   };
   if (!data.name) return;
 
-  closeModal('modal-guest');
-  showBanner('💾 Saving to Google Sheets…', 'info');
-
+  // Capture BEFORE closeModal resets them
   const tab = window._editGuestTab || currentGuestTab;
   const row = window._editGuestRow;
+  window._editGuestTab = null;
+  window._editGuestRow = null;
+  closeModal('modal-guest');
+  showBanner('💾 Saving to Google Sheets…', 'info');
 
   if (row) {
     // Update existing — send full row including name, surname, group
@@ -448,15 +469,23 @@ function editEvent(row) {
       }
     } catch(_) { dateVal = e.date; }
   }
-  // Clean time — remove any ISO date prefix, just keep HH:MM or HH:MM:SS
+  // Clean time for the text input — convert any format to HH:MM:SS
   let timeVal = '';
   if (e.time) {
     const t = String(e.time);
-    if (t.indexOf('T') !== -1) {
-      // Extract time part from ISO string
-      const tPart = t.split('T')[1] || '';
-      timeVal = tPart.replace('Z','').replace('.000','').substring(0,8);
+    // If it's a full Date string or ISO, extract HH:MM:SS using Date parsing
+    if (t.indexOf('GMT') !== -1 || t.indexOf('T') !== -1 || t.match(/^[A-Z][a-z]{2} [A-Z]/)) {
+      try {
+        const d = new Date(t);
+        if (!isNaN(d.getTime())) {
+          const hh = String(d.getUTCHours()).padStart(2,'0');
+          const mm = String(d.getUTCMinutes()).padStart(2,'0');
+          const ss = String(d.getUTCSeconds()).padStart(2,'0');
+          timeVal = hh + ':' + mm + ':' + ss;
+        }
+      } catch(_) { timeVal = t.substring(0,8); }
     } else {
+      // Plain HH:MM or HH:MM:SS string
       timeVal = t.substring(0,8);
     }
   }
@@ -497,6 +526,7 @@ async function saveEvent() {
     if (res && res.status === 'ok') {
       const e = state.events.find(x => x.row === row);
       if (e) Object.assign(e, data);
+      saveLocal(); renderEvents(); renderDashboard();
       showBanner('✅ Event updated!', 'success', 3000);
     } else {
       showBanner('⚠️ Could not update event', 'error', 4000);
@@ -765,6 +795,8 @@ function closeModal(id) {
   window._editEventRow    = null;
   window._editExpenseRow  = null;
   window._editTaskRow     = null;
+  window._editGuestRow    = null;
+  window._editGuestTab    = null;
 }
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
