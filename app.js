@@ -326,7 +326,6 @@ function editGuest(tab, row) {
   document.getElementById('g-table').value   = g.table || '';
   document.getElementById('g-rsvp').value    = g.rsvp || 'Pending';
   document.getElementById('g-invite').value  = g.invite || 'No';
-  document.getElementById('g-diet').value    = g.diet || '';
   document.getElementById('g-contact').value = g.contact || '';
   document.getElementById('g-notes').value   = g.notes || '';
   window._editGuestTab = tab;
@@ -437,9 +436,33 @@ async function deleteEvent(row) {
 function editEvent(row) {
   const e = state.events.find(x => x.row === row);
   if (!e) return;
+  // Ensure date is in yyyy-MM-dd format for the date input
+  let dateVal = '';
+  if (e.date) {
+    try {
+      const d = new Date(e.date);
+      if (!isNaN(d)) {
+        dateVal = d.toISOString().split('T')[0];
+      } else {
+        dateVal = e.date;
+      }
+    } catch(_) { dateVal = e.date; }
+  }
+  // Clean time — remove any ISO date prefix, just keep HH:MM or HH:MM:SS
+  let timeVal = '';
+  if (e.time) {
+    const t = String(e.time);
+    if (t.indexOf('T') !== -1) {
+      // Extract time part from ISO string
+      const tPart = t.split('T')[1] || '';
+      timeVal = tPart.replace('Z','').replace('.000','').substring(0,8);
+    } else {
+      timeVal = t.substring(0,8);
+    }
+  }
   document.getElementById('ev-name').value  = e.name  || '';
-  document.getElementById('ev-date').value  = e.date  || '';
-  document.getElementById('ev-time').value  = e.time  || '';
+  document.getElementById('ev-date').value  = dateVal;
+  document.getElementById('ev-time').value  = timeVal;
   document.getElementById('ev-venue').value = e.venue || '';
   document.getElementById('ev-notes').value = e.notes || '';
   window._editEventRow = row;
@@ -464,10 +487,10 @@ async function saveEvent() {
     status:'Upcoming'
   };
   if (!data.name) return;
+  const row = window._editEventRow;  // capture BEFORE closeModal resets it
+  window._editEventRow = null;
   closeModal('modal-event');
   showBanner('💾 Saving to Google Sheets…', 'info');
-
-  const row = window._editEventRow;
   let res;
   if (row) {
     res = await apiPost({ action: 'updateEvent', row, data });
@@ -500,7 +523,20 @@ function renderTasks() {
   const list = state.tasks.filter(t =>
     (!sf || (sf==='Done' ? (t.done||t.status==='Done') : (!t.done && t.status!=='Done'))) &&
     (!cf || t.cat === cf)
-  );
+  ).sort((a, b) => {
+    const aDone = a.done || a.status === 'Done';
+    const bDone = b.done || b.status === 'Done';
+    // Done tasks always go to the bottom
+    if (aDone && !bDone) return 1;
+    if (!aDone && bDone) return -1;
+    // Sort by due date ascending — tasks without due date go last
+    const aDate = a.due ? new Date(a.due) : null;
+    const bDate = b.due ? new Date(b.due) : null;
+    if (aDate && bDate) return aDate - bDate;
+    if (aDate && !bDate) return -1;
+    if (!aDate && bDate) return 1;
+    return 0;
+  });
 
   document.getElementById('task-list').innerHTML = list.map(t => {
     const done = t.done || t.status === 'Done';
@@ -585,9 +621,10 @@ async function saveTask() {
     notes:  ''
   };
   if (!data.text) return;
+  const row = window._editTaskRow;  // capture BEFORE closeModal resets it
+  window._editTaskRow = null;
   closeModal('modal-task');
   showBanner('💾 Saving task…', 'info');
-  const row = window._editTaskRow;
   if (row) {
     // Update existing task
     const res = await apiPost({ action: 'updateTask', row, data });
@@ -691,16 +728,22 @@ async function saveExpense() {
     notes:  document.getElementById('ex-notes').value.trim(),
   };
   if (!data.name) return;
+  const row = window._editExpenseRow;  // capture BEFORE closeModal resets it
+  window._editExpenseRow = null;
   closeModal('modal-expense');
   showBanner('💾 Saving expense…', 'info');
-
-  const row = window._editExpenseRow;
   let res;
   if (row) {
     res = await apiPost({ action: 'updateExpense', row, data });
     if (res && res.status === 'ok') {
       const e = state.expenses.find(x => x.row === row);
       if (e) Object.assign(e, data);
+      saveLocal(); renderExpenses(); renderDashboard();
+      showBanner('✅ Expense updated!', 'success', 3000);
+      return;
+    } else {
+      showBanner('⚠️ Could not update expense', 'error', 4000);
+      return;
     }
   } else {
     res = await apiPost({ action: 'addExpense', data });
@@ -719,8 +762,9 @@ async function saveExpense() {
 function openModal(id)  { document.getElementById(id).classList.add('open'); }
 function closeModal(id) {
   document.getElementById(id).classList.remove('open');
-  window._editEventRow = null;
-  window._editExpenseRow = null;
+  window._editEventRow    = null;
+  window._editExpenseRow  = null;
+  window._editTaskRow     = null;
 }
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
