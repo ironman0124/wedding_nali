@@ -209,28 +209,14 @@ function showSection(id) {
 }
 
 function toggleSidebar() {
-  const sidebar = document.getElementById('sidebar');
-  sidebar.classList.toggle('open');
-  // Add/remove dark overlay behind sidebar on mobile
-  let overlay = document.getElementById('sidebar-overlay');
-  if (sidebar.classList.contains('open')) {
-    if (!overlay) {
-      overlay = document.createElement('div');
-      overlay.id = 'sidebar-overlay';
-      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:499;';
-      overlay.onclick = () => { sidebar.classList.remove('open'); overlay.remove(); };
-      document.body.appendChild(overlay);
-    }
-  } else {
-    if (overlay) overlay.remove();
-  }
+  document.getElementById('sidebar').classList.toggle('open');
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────
 function renderDashboard() {
   const tabs = [
     { key:'haldi',   label:'🌿 Haldi Day',   color:'teal',   eventName:'Haldi' },
-    { key:'mendhi',  label:'💃 Mendhi Day',  color:'purple', eventName:'Mendhi' },
+    { key:'mendhi',  label:'💃 Mendhi Day',  color:'purple', eventName:'Mehendi' },
     { key:'wedding', label:'💍 Wedding Day', color:'red',    eventName:'Wedding' },
   ];
 

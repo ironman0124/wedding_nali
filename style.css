@@ -994,220 +994,128 @@ body {
   margin-top: 1rem;
 }
 
-@media (max-width: 600px) {
-  .dash-row-2 { grid-template-columns: 1fr; }
-  .dash-event-stats { grid-template-columns: repeat(3,1fr); }
-  .guest-tabs { flex-wrap: wrap; }
-}
-
 /* ══════════════════════════════════════════════
-   MOBILE — iOS Safari & Android Full Screen Fix
+   MOBILE — iOS Safari & Android
 ══════════════════════════════════════════════ */
 
-/* ── CORE: Prevent any content from exceeding screen width ── */
-html {
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
-}
-
-body {
+/* Core: prevent horizontal overflow */
+html, body {
   overflow-x: hidden;
   width: 100%;
   max-width: 100vw;
-  /* iOS Safari: use dvh (dynamic viewport height) to account for browser chrome */
-  min-height: 100dvh;
-  min-height: -webkit-fill-available;
 }
 
-/* Fix for iOS Safari 100vh bug */
-.app {
-  min-height: 100dvh;
-  min-height: -webkit-fill-available;
-  overflow-x: hidden;
-  width: 100%;
-}
+/* iOS Safari 100vh fix — use dvh */
+body { min-height: 100dvh; min-height: -webkit-fill-available; }
 
-.main-content {
-  overflow-x: hidden;
-  width: 100%;
-  max-width: 100%;
-  min-height: 100dvh;
-  min-height: -webkit-fill-available;
-}
-
-/* ── SAFE AREA: iPhone notch / Dynamic Island / home indicator ── */
+/* Safe area for notch / Dynamic Island / home bar */
 @supports (padding: max(0px)) {
-  .topbar {
-    padding-top: max(0px, env(safe-area-inset-top));
-    padding-left: max(1rem, env(safe-area-inset-left));
-    padding-right: max(1rem, env(safe-area-inset-right));
-  }
-  .main-content {
-    padding-bottom: max(0px, env(safe-area-inset-bottom));
-  }
-  .sidebar {
-    padding-top: max(0px, env(safe-area-inset-top));
-    padding-bottom: max(1rem, env(safe-area-inset-bottom));
-  }
+  .topbar        { padding-top: max(0px, env(safe-area-inset-top)); }
+  .sidebar       { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+  .main-content  { padding-bottom: max(0px, env(safe-area-inset-bottom)); }
 }
 
-/* ── iOS ZOOM PREVENTION: 16px minimum on inputs ── */
+/* Prevent iOS zoom on input tap */
 @media (max-width: 768px) {
   input[type="text"],
   input[type="number"],
   input[type="email"],
   input[type="password"],
   input[type="date"],
-  select,
-  textarea {
+  select, textarea {
     font-size: 16px !important;
     -webkit-appearance: none;
   }
 }
 
-/* ── MOBILE LAYOUT: 768px and below ── */
+/* ── MOBILE LAYOUT ── */
 @media (max-width: 768px) {
 
-  /* Sidebar: slides in from left, does NOT push content */
+  /* Sidebar: hidden off-screen, slides in as overlay — does NOT grey the page */
   .sidebar {
-    position: fixed !important;
-    top: 0;
-    left: 0;
-    height: 100%;
-    height: 100dvh;
-    width: min(80vw, 280px) !important;
-    z-index: 500;
-    transform: translateX(calc(-1 * min(80vw, 280px)));
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    transform: translateX(calc(-1 * var(--sidebar-w)));
+    box-shadow: none;
   }
   .sidebar.open {
-    transform: translateX(0) !important;
-    box-shadow: 4px 0 40px rgba(0,0,0,0.85);
+    transform: translateX(0);
+    box-shadow: 4px 0 40px rgba(0,0,0,0.8);
   }
   .sidebar-close { display: block; }
 
   /* Main content: full width, no left margin */
   .main-content {
-    margin-left: 0 !important;
-    width: 100% !important;
-    max-width: 100vw !important;
+    margin-left: 0;
+    width: 100%;
+    max-width: 100vw;
     overflow-x: hidden;
   }
 
   /* Topbar */
-  .menu-btn { display: block; }
-  .topbar {
-    height: 52px;
-    padding: 0 1rem;
-  }
+  .menu-btn    { display: block; }
+  .topbar      { padding: 0 1rem; height: 52px; }
   .topbar-title { font-size: 14px; }
   .topbar-user span { display: none; }
 
   /* Sections */
-  .section { padding: 1rem 0.85rem; }
-  .section-header { flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+  .section           { padding: 1rem 0.85rem; }
+  .section-header    { flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
   .section-header h2 { font-size: 1.2rem; }
-  .btn-primary { padding: 0.5rem 0.85rem; font-size: 12px; }
+  .btn-primary       { padding: 0.5rem 0.85rem; font-size: 12px; }
 
   /* Guest tabs */
-  .guest-tabs { flex-wrap: wrap; gap: 6px; }
-  .guest-tab-btn {
-    flex: 1;
-    min-width: 85px;
-    text-align: center;
-    padding: 7px 8px;
-    font-size: 12px;
-  }
+  .guest-tabs    { flex-wrap: wrap; gap: 6px; }
+  .guest-tab-btn { flex: 1; min-width: 80px; text-align: center; padding: 7px 8px; font-size: 12px; }
 
   /* Filters */
-  .filter-bar { flex-direction: column; gap: 0.5rem; }
+  .filter-bar   { flex-direction: column; gap: 0.5rem; }
   .search-input { min-width: unset; width: 100%; box-sizing: border-box; }
   .filter-select { width: 100%; box-sizing: border-box; }
 
-  /* Tables: horizontal scroll */
-  .table-wrap {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    width: 100%;
-    max-width: 100%;
-  }
-  .data-table { min-width: 460px; }
-  .data-table th, .data-table td {
-    padding: 0.45rem 0.6rem;
-    font-size: 11px;
-    white-space: nowrap;
-  }
-  .table-footer { font-size: 11px; }
+  /* Tables */
+  .table-wrap   { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; }
+  .data-table   { min-width: 460px; }
+  .data-table th, .data-table td { padding: 0.45rem 0.6rem; font-size: 11px; white-space: nowrap; }
 
   /* Dashboard */
   .dash-event-stats { grid-template-columns: repeat(3, 1fr) !important; }
-  .dash-row-2 { grid-template-columns: 1fr !important; }
-  .dash-stat { padding: 0.5rem 0.4rem; }
-  .ds-val { font-size: 1.1rem; }
-  .ds-label { font-size: 9px; letter-spacing: 0.04em; }
+  .dash-row-2       { grid-template-columns: 1fr !important; }
+  .dash-stat        { padding: 0.5rem 0.4rem; }
+  .ds-val           { font-size: 1.1rem; }
+  .ds-label         { font-size: 9px; letter-spacing: 0.04em; }
   .dash-event-title { font-size: 12px !important; padding: 0.5rem 0.75rem !important; }
   .dash-event-date  { font-size: 11px !important; padding: 0.3rem 0.75rem !important; }
-  .dash-card { padding: 0.75rem; }
+  .stats-grid       { grid-template-columns: repeat(2, 1fr) !important; }
 
-  /* Stats grid */
-  .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  /* Modals — stay centered (no bottom-sheet to avoid display issues) */
+  .modal           { max-height: 92vh; width: calc(100% - 2rem); margin: 1rem; max-width: 100%; }
+  .modal-body      { padding: 1rem; max-height: 70vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .form-row        { grid-template-columns: 1fr !important; gap: 0.6rem; }
 
   /* Event cards */
   .event-card { flex-direction: column; gap: 0.5rem; }
-  .event-card-name { font-size: 14px; }
 
-  /* Modals: slide up from bottom (native feel) */
-  .modal-overlay {
-    align-items: flex-end !important;
-    padding: 0 !important;
-  }
-  .modal {
-    border-radius: 16px 16px 0 0 !important;
-    max-height: 90vh;
-    width: 100% !important;
-    margin: 0 !important;
-    max-width: 100% !important;
-  }
-  .modal-body {
-    padding: 1rem !important;
-    max-height: 70vh;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-  .form-row { grid-template-columns: 1fr !important; gap: 0.6rem; }
+  /* Buttons */
+  .btn-icon   { min-width: 34px; min-height: 34px; padding: 8px; }
+  .nav-link   { padding: 0.9rem 1.25rem; }
 
   /* Tasks */
   .task-check { width: 22px; height: 22px; flex-shrink: 0; }
-  .task-text { font-size: 13px; }
-  .task-meta { flex-wrap: wrap; gap: 3px; font-size: 11px; }
-
-  /* Touch buttons */
-  .btn-icon {
-    min-width: 36px;
-    min-height: 36px;
-    padding: 8px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .nav-link { padding: 0.9rem 1.25rem; }
+  .task-text  { font-size: 13px; }
+  .task-meta  { flex-wrap: wrap; gap: 3px; font-size: 11px; }
 
   /* Login */
-  .login-card { padding: 1.5rem 1.25rem; margin: 1rem; max-width: calc(100vw - 2rem); }
+  .login-card  { padding: 1.5rem 1.25rem; margin: 1rem; max-width: calc(100vw - 2rem); }
   .login-names { font-size: 1.5rem; }
   .reactor-ring { width: 56px; height: 56px; }
   .reactor-core { width: 22px; height: 22px; }
 
-  /* Sync/logout buttons */
+  /* Sync/logout */
   .sync-btn, .logout-btn { padding: 0.6rem; font-size: 11px; }
 }
 
-/* ── SMALL PHONES: 390px and below ── */
+/* ── SMALL PHONES ── */
 @media (max-width: 390px) {
   .dash-event-stats { grid-template-columns: repeat(2, 1fr) !important; }
-  .guest-tab-btn { font-size: 11px; padding: 6px 6px; min-width: 70px; }
-  .section { padding: 0.75rem 0.6rem; }
-  .section-header h2 { font-size: 1.1rem; }
-  .data-table { min-width: 400px; }
+  .guest-tab-btn    { font-size: 11px; padding: 6px; min-width: 70px; }
+  .section          { padding: 0.75rem 0.6rem; }
 }
